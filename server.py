@@ -40,7 +40,7 @@ class Endpoint:
     """
     def __init__(self, path):
         self.path = sanitize_path(path)
-        self.pathlist = self.path.split("/")
+        self.pathlist = self.path.split("/")  # todo property structure
 
 
 class RESTServer(HTTPServer):
