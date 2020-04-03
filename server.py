@@ -10,8 +10,6 @@ PORT = 8080
 DEBUG = False
 #######
 
-_loglevel = None
-
 usage = "Usage: {} [OPTIONS]\n\n" \
         "OPTIONS:\n" \
         "  --help\n" \
@@ -35,6 +33,8 @@ class RESTServer(HTTPServer):
         self.endpoints = []
         super().__init__(*args, **kwargs)
 
+    def match_endpoints(self, path):
+
     def register_endpoint(self, endpoint):
         """
         :param endpoint: Endpoint object
@@ -44,9 +44,13 @@ class RESTServer(HTTPServer):
 
 class RequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
-        global _loglevel
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length)
+        print("Received POST; path: {}".format(self.path))
+        print("Posted data:\n{}".format(post_data))
+
+    def do_GET(self):
+        print("Received GET; path: {}".format(self.path))
 
 
 def run_server(port):
@@ -90,15 +94,15 @@ def parse_args(args):
 
 
 def main(args):
-    global _loglevel
-
     config = parse_args(args)
     if config["help"]:
         print(usage)
         return
     elif config["debug"]:
-        _loglevel = "debug"
-    
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.WARNING)
+
     run_server(config["port"])
 
 if __name__ == "__main__":
