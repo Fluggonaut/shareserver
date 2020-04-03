@@ -4,6 +4,8 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import sys
 import logging
 
+import simpleendpoint
+
 
 ############
 # config ###
@@ -118,7 +120,9 @@ def sanitize_path(path):
 
 def run_server(port):
     addr = ("", port)
-    RESTServer(addr, RequestHandler).serve_forever()
+    rest_server = RESTServer(addr, RequestHandler)
+    simpleendpoint.init(rest_server)
+    rest_server.serve_forever()
 
 
 def parse_args(args):
