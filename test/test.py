@@ -14,13 +14,14 @@ class TestServerMethods(unittest.TestCase):
 
         self.assertEqual(server.match_endpoints("/a"), None, "incorrect behavior on empty endpoint list")
 
+        ep_root = restserver.Endpoint("/")
         ep_a = restserver.Endpoint("/a")
         ep_ab = restserver.Endpoint("/a/b")
         ep_ac = restserver.Endpoint("/a/c")
         ep_abc = restserver.Endpoint("/a/b/c")
         ep_adc = restserver.Endpoint("/a/d/c")
-        ep_adc = restserver.Endpoint("/b/c")
-        ep_adc = restserver.Endpoint("/b/d")
+        ep_bc = restserver.Endpoint("/b/c")
+
         server.register_endpoint(ep_a)
         self.assertEqual(server.match_endpoints("/a"), ep_a, "simple positive matching testcase failed")
         self.assertEqual(server.match_endpoints("/b"), None, "simple negative matching testcase failed")
@@ -34,7 +35,13 @@ class TestServerMethods(unittest.TestCase):
         self.assertEqual(server.match_endpoints("/a/b/c/d"), ep_abc, "positive matching testcase failed")
         self.assertEqual(server.match_endpoints("/c"), None, "negative matching testcase failed")
         self.assertEqual(server.match_endpoints("/b"), None, "negative matching testcase failed")
+
+        server.register_endpoint(ep_bc)
         self.assertEqual(server.match_endpoints("/b/a"), None, "negative partial matching testcase failed")
+
+        server.register_endpoint(ep_root)
+        self.assertEqual(server.match_endpoints("/"), ep_root, "matching on / failed")
+        self.assertEqual(server.match_endpoints("/c"), ep_root, "matching on / failed")
 
 
 if __name__ == "__main__":
