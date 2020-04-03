@@ -30,6 +30,12 @@ class ParseError(Exception):
 
 
 class Endpoint:
+    """
+    Endpoint to be subclassed and registered with the server.
+    Methods that are called on appropriate request:
+    do_GET(requesthandler), do_POST(requesthandler)
+    If a method is not present, the request is refused (TODO 403 or 404 maybe).
+    """
     def __init__(self, path):
         self.path = sanitize_path(path)
         self.pathlist = self.path.split("/")
@@ -57,11 +63,13 @@ class RESTServer(HTTPServer):
             if not candidates:
                 break
             for el in candidates:
-                if len(el.pathlist) < i-1:
+                if len(el.pathlist) == i:
                     matches.append(el)
                     todel.append(el)
                 elif el.pathlist[i] != path[i]:
                     todel.append(el)
+                elif i == len(el.pathlist) - 1:
+                    matches.append(el)
 
             for el in todel:
                 candidates.remove(el)
@@ -79,6 +87,7 @@ class RESTServer(HTTPServer):
 
     def register_endpoint(self, endpoint):
         """
+        Registers and endpoint.
         :param endpoint: Endpoint object
         """
         self.endpoints.append(endpoint)
@@ -86,13 +95,12 @@ class RESTServer(HTTPServer):
 
 class RequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
-        content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length)
-        print("Received POST; path: {}".format(self.path))
-        print("Posted data:\n{}".format(post_data))
+        ep = self.server.match_endpoints(self.path)
+        ep.do_POST(self)
 
     def do_GET(self):
-        print("Received GET; path: {}".format(self.path))
+        ep = self.server.match_endpoints(self.path)
+        ep.do_GET(self)
 
 
 def sanitize_path(path):
