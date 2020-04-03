@@ -12,6 +12,14 @@ class ParseError(Exception):
     pass
 
 
+class DownloadError(Exception):
+    pass
+
+
+class PlayerError(Exception):
+    pass
+
+
 class Queue(Thread):
     def __init__(self):
         self.lock = Lock()
@@ -26,18 +34,61 @@ class Queue(Thread):
 
 
 class Downloader(Queue):
-    def __init__(self, player):
+    def __init__(self, videodir, player):
+        """
+        Download handler. Use append() to request a download; calls player.append() on download success.
+        :param videodir: Directory where the videos are to be stored
+        :param player: Player object
+        """
+        self.videodir = videodir
+        if self.videodir.endswith("/"):
+            self.videodir = self.videodir[:-1]
         self.player = player
+        self.storage = []
+        self.scan_storage()
         super().__init__()
+        self.start()
+
+    def scan_storage(self):
+        """
+        Scans videodir for video files; works like a download cache.
+        Video files are expected to be named videoid.ext with ext being the file extension.
+        """
+        self.storage = []
+        for el in os.listdir(self.videodir):
+            self.storage.append(os.path.splitext(self.videodir + "/" + el))
 
     def download(self, videoid):
-        # "youtube-dl {} -o {}/%(id)s.%(ext)s".format(videoid, dir)
-        pass
+        """
+        Downloads yt video videoid to videodir/videoid.ext. Raises DownloadError when youtube-dl fails.
+        :param videoid: yt id of the video to be downloaded
+        """
+        found = False
+        for file, ext in self.storage:
+            if file == videoid:
+                found = True
+                break
+
+        if not found:
+            retval = os.system("youtube-dl {} -o {}/%(id)s.%(ext)s".format(videoid, self.videodir))
+            if retval != 0:
+                raise DownloadError("youtube-dl failed")
+            self.scan_storage()
+
+        found = False
+        for file, ext in self.storage:
+            if file == videoid:
+                found = True
+                self.player.append(file + "." + ext)
+        if not found:
+            raise DownloadError("file not found after download: {}".format(videoid))
 
     def run(self):
         self.update_event.wait()
         with self.lock:
-            pass
+            for el in self.queue:
+                self.download(el)
+            self.update_event.clear()
 
 
 class Player(Queue):
