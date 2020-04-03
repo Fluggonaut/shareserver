@@ -5,10 +5,16 @@ import sys
 import logging
 
 
+############
 # config ###
 PORT = 8080
 DEBUG = False
-#######
+
+# Endpoint URL options
+IGNORE_DOUBLE_SLASH = False  # not implemented yet
+CASE_SENSITIVE = False  # not implemented yet
+############
+############
 
 usage = "Usage: {} [OPTIONS]\n\n" \
         "OPTIONS:\n" \
@@ -25,7 +31,8 @@ class ParseError(Exception):
 
 class Endpoint:
     def __init__(self, path):
-        self.path = path
+        self.path = sanitize_path(path)
+        self.pathlist = self.path.split("/")
 
 
 class RESTServer(HTTPServer):
@@ -34,6 +41,41 @@ class RESTServer(HTTPServer):
         super().__init__(*args, **kwargs)
 
     def match_endpoints(self, path):
+        """
+        Finds the endpoint that matches best with path.
+        If path is "/a/b/c", it matches "/a/b" better than "/a". It does not match "/b".
+        :param path: path that is to be matched
+        :return: endpoint object that matches; None if no match is found
+        """
+        path = sanitize_path(path).split("/")
+        candidates = self.endpoints.copy()
+        matches = []
+        todel = []
+
+        # comparison loop
+        for i in range(len(path)):
+            if not candidates:
+                break
+            for el in candidates:
+                if len(el.pathlist) < i-1:
+                    matches.append(el)
+                    todel.append(el)
+                elif el.pathlist[i] != path[i]:
+                    todel.append(el)
+
+            for el in todel:
+                candidates.remove(el)
+            todel = []
+
+        if not matches:
+            return None
+
+        # get best match
+        best = matches[0]
+        for el in matches:
+            if len(el.pathlist) > len(best.pathlist):
+                best = el
+        return best
 
     def register_endpoint(self, endpoint):
         """
@@ -51,6 +93,19 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         print("Received GET; path: {}".format(self.path))
+
+
+def sanitize_path(path):
+    """
+    Removes trailing / and adds leading /; e.g. "/endpoint/path"
+    :param path: path to sanitize
+    :return: sanitized path
+    """
+    if not path.startswith("/"):
+        path = "/" + path
+    if path.endswith("/"):
+        path = path[:-1]
+    return path
 
 
 def run_server(port):
