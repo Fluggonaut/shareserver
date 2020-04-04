@@ -109,7 +109,7 @@ class Downloader(Queue):
         if not found:
             logging.info("Downloading {}".format(videoid))
             retval = os.system("youtube-dl {} -f bestvideo[ext=mp4]+bestaudio[ext=m4a] -o {}/%\(id\)s.%\(ext\)s"
-                               .format(videoid, self.videodir))
+                               .format("https://youtube.com/watch?v=" + videoid, self.videodir))
             if retval != 0:
                 msg = "youtube-dl failed on {}".format(videoid)
                 logging.error(msg)

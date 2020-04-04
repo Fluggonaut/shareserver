@@ -60,6 +60,7 @@ class TestYoutubeMethods(unittest.TestCase):
         self.assertEqual(yt.parse_yt_url("https://youtu.be/ivroIGMAVig&foo=bar"), "ivroIGMAVig")
         self.assertEqual(yt.parse_yt_url("http://youtu.be/ivroIGMAVig&foo=bar"), "ivroIGMAVig")
         self.assertEqual(yt.parse_yt_url("www.youtu.be/ivroIGMAVig&foo=bar"), "ivroIGMAVig")
+        self.assertEqual(yt.parse_yt_url("https://youtube.com/watch?v=-TRRejlAwo8"), "-TRRejlAwo8")
 
         # Negative tests
         self.assertRaises(yt.ParseError, yt.parse_yt_url, "foo")
