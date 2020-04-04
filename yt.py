@@ -91,7 +91,7 @@ class Downloader(Queue):
         self.storage = []
         for el in os.listdir(self.videodir):
             file, ext = os.path.splitext(self.videodir + "/" + el)
-            file = os.path.split(file)
+            _, file = os.path.split(file)
             self.storage.append((file, ext))
 
     def consume(self, videoid):
