@@ -94,6 +94,7 @@ class Downloader(Queue):
 
     def consume(self, videoid):
         """
+        Overrides super method.
         Downloads yt video videoid to videodir/videoid.ext. Raises DownloadError when youtube-dl fails.
         :param videoid: yt id of the video to be downloaded
         """
@@ -175,6 +176,7 @@ def parse_yt_url(url):
         return m1.group("videoid")
     if m2 is not None:
         return m2.group("videoid")
+    logging.warning("Unknown Youtube link: {}".format(url))
     raise ParseError()
 
 
