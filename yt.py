@@ -90,7 +90,9 @@ class Downloader(Queue):
         """
         self.storage = []
         for el in os.listdir(self.videodir):
-            self.storage.append(os.path.splitext(self.videodir + "/" + el))
+            file, ext = os.path.splitext(self.videodir + "/" + el)
+            file = os.path.split(file)
+            self.storage.append((file, ext))
 
     def consume(self, videoid):
         """
@@ -138,7 +140,7 @@ class LinkshareEndpoint(Endpoint):
         super().__init__(path)
 
     def do_POST(self, reqhandler):
-        print("Incoming POST on {}".format(reqhandler.path))
+        logging.debug("Incoming POST on {}".format(reqhandler.path))
         clen = int(reqhandler.headers['Content-Length'])
         post = reqhandler.rfile.read(clen)
         try:
@@ -185,6 +187,7 @@ def parse_yt_url(url):
 
 
 def init(rest_server):
+    logging.basicConfig(level=logging.DEBUG)
     player = Player()
     downloader = Downloader(VIDEODIR, player)
     endpoint = LinkshareEndpoint("/linkshare", downloader)
