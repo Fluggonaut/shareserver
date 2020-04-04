@@ -152,6 +152,11 @@ class LinkshareEndpoint(Endpoint):
         except KeyError:
             logging.warning("link not found in {}".format(data))
             return
+        try:
+            link = parse_yt_url(link)
+        except ParseError:
+            logging.warning("Unknown Youtube link: {}".format(link))
+            return
         self.downloader.append(link)
 
 
@@ -176,7 +181,6 @@ def parse_yt_url(url):
         return m1.group("videoid")
     if m2 is not None:
         return m2.group("videoid")
-    logging.warning("Unknown Youtube link: {}".format(url))
     raise ParseError()
 
 
