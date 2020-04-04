@@ -187,7 +187,7 @@ def parse_yt_url(url):
 
 
 def init(rest_server):
-    logging.basicConfig(level=logging.DEBUG)
+    logging.info("Initiating yt plugin")
     player = Player()
     downloader = Downloader(VIDEODIR, player)
     endpoint = LinkshareEndpoint("/linkshare", downloader)

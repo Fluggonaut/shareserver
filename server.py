@@ -136,7 +136,7 @@ def parse_args(args):
 
     i = 1
     while i < len(args):
-        if args[i] == "port":
+        if args[i] == "--port":
             try:
                 config["port"] = int(args[i+1])
             except KeyError:
@@ -144,11 +144,11 @@ def parse_args(args):
             except ValueError:
                 raise ParseError("{} is not a valid port number.".format(args[i+1]))
             i += 1
-        elif args[i] == "debug":
+        elif args[i] == "--debug":
             config["debug"] = True
-        elif args[i] == "help":
+        elif args[i] == "--help":
             config["help"] = True
-        elif args[i] == "yttest":
+        elif args[i] == "--yttest":
             config["yttest"] = True
             try:
                 config["yttestlink"] = args[i+1]
@@ -162,11 +162,13 @@ def parse_args(args):
 
 def main(args):
     config = parse_args(args)
+    print(config)
     if config["help"]:
         print(usage)
         return
     elif config["debug"]:
         logging.basicConfig(level=logging.DEBUG)
+        logging.debug("Loglevel: Debug")
     else:
         logging.basicConfig(level=logging.WARNING)
 
