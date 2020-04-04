@@ -119,7 +119,7 @@ class Downloader(Queue):
         for file, ext in self.storage:
             if file == videoid:
                 found = True
-                self.player.append(file + ext)
+                self.player.append(self.videodir + "/" + file + ext)
         if not found:
             raise DownloadError("file not found after download: {}".format(videoid))
 
