@@ -162,7 +162,6 @@ def parse_args(args):
 
 def main(args):
     config = parse_args(args)
-    print(config)
     if config["help"]:
         print(usage)
         return
