@@ -4,7 +4,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import sys
 import logging
 
-import simpleendpoint
+import yt
 
 
 ############
@@ -121,7 +121,7 @@ def sanitize_path(path):
 def run_server(port):
     addr = ("", port)
     rest_server = RESTServer(addr, RequestHandler)
-    simpleendpoint.init(rest_server)
+    yt.init(rest_server)
     rest_server.serve_forever()
 
 

@@ -3,6 +3,7 @@ import unittest
 import sys
 sys.path.append("..")
 import server as restserver
+import yt
 
 
 class TestServerMethods(unittest.TestCase):
@@ -42,6 +43,30 @@ class TestServerMethods(unittest.TestCase):
         server.register_endpoint(ep_root)
         self.assertEqual(server.match_endpoints("/"), ep_root, "matching on / failed")
         self.assertEqual(server.match_endpoints("/c"), ep_root, "matching on / failed")
+
+
+class TestYoutubeMethods(unittest.TestCase):
+    def test_link_parser(self):
+        self.assertEqual(yt.parse_yt_url("https://www.youtube.com/watch?v=ivroIGMAVig"), "ivroIGMAVig")
+        self.assertEqual(yt.parse_yt_url("https://www.youtube.com/watch?v=-ivroIGMAVig"), "-ivroIGMAVig")
+        self.assertEqual(yt.parse_yt_url("https://www.youtube.com/watch?v=ivroIGMAVig&foo=bar"), "ivroIGMAVig")
+        self.assertEqual(yt.parse_yt_url("https://www.youtube.com/watch?v=ivroIGMAVig&foo=bar&bar=foo"), "ivroIGMAVig")
+        self.assertEqual(yt.parse_yt_url("http://www.youtube.com/watch?v=ivroIGMAVig&foo=bar"), "ivroIGMAVig")
+        self.assertEqual(yt.parse_yt_url("https://youtube.com/watch?v=ivroIGMAVig&foo=bar"), "ivroIGMAVig")
+        self.assertEqual(yt.parse_yt_url("http://youtube.com/watch?v=ivroIGMAVig&foo=bar"), "ivroIGMAVig")
+        self.assertEqual(yt.parse_yt_url("www.youtube.com/watch?v=ivroIGMAVig&foo=bar"), "ivroIGMAVig")
+
+        self.assertEqual(yt.parse_yt_url("https://youtu.be/ivroIGMAVig"), "ivroIGMAVig")
+        self.assertEqual(yt.parse_yt_url("https://youtu.be/ivroIGMAVig&foo=bar"), "ivroIGMAVig")
+        self.assertEqual(yt.parse_yt_url("http://youtu.be/ivroIGMAVig&foo=bar"), "ivroIGMAVig")
+        self.assertEqual(yt.parse_yt_url("www.youtu.be/ivroIGMAVig&foo=bar"), "ivroIGMAVig")
+
+        # Negative tests
+        self.assertRaises(yt.ParseError, yt.parse_yt_url, "foo")
+        self.assertRaises(yt.ParseError, yt.parse_yt_url, "https://youtube.com/")
+        self.assertRaises(yt.ParseError, yt.parse_yt_url, "https://youtube.com/user/foo")
+        self.assertRaises(yt.ParseError, yt.parse_yt_url, "https://youtu.be/?foo=bar")
+        self.assertRaises(yt.ParseError, yt.parse_yt_url, "https://youtube.com/ivroIGMAVig")
 
 
 if __name__ == "__main__":
