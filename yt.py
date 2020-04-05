@@ -142,25 +142,38 @@ class LinkshareEndpoint(Endpoint):
 
     def do_POST(self, reqhandler):
         logging.debug("Incoming POST on {}".format(reqhandler.path))
-        clen = int(reqhandler.headers['Content-Length'])
+        try:
+            clen = int(reqhandler.headers['Content-Length'])
+        except KeyError:
+            reqhandler.send_response(411)  # Length required
+            reqhandler.end_headers()
+            return
         post = reqhandler.rfile.read(clen)
         try:
             data = json.loads(post)
         except json.decoder.JSONDecodeError:
             logging.warning("Invalid JSON: {}".format(post))
+            reqhandler.send_response(400)  # Bad Request
+            reqhandler.end_headers()
             return
 
         try:
             link = data["link"]
         except KeyError:
             logging.warning("link not found in {}".format(data))
+            reqhandler.send_response(422)  # Unprocessable entity
+            reqhandler.end_headers()
             return
         try:
             link = parse_yt_url(link)
         except ParseError:
             logging.warning("Unknown Youtube link: {}".format(link))
+            reqhandler.send_response(422)  # Unprocessable entity
+            reqhandler.end_headers()
             return
         self.downloader.append(link)
+        reqhandler.send_response(202)  # Accepted
+        reqhandler.end_headers()
 
 
 def parse_yt_url(url):

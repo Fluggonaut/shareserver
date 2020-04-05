@@ -96,13 +96,24 @@ class RESTServer(HTTPServer):
 
 
 class RequestHandler(BaseHTTPRequestHandler):
+    def do_method(self, method_function):
+        try:
+            method_function(self)
+        except AttributeError:
+            self.send_response(405)  # Method not allowed
+            self.end_headers()
+
     def do_POST(self):
         ep = self.server.match_endpoints(self.path)
-        ep.do_POST(self)
+        self.do_method(ep.do_POST)
 
     def do_GET(self):
         ep = self.server.match_endpoints(self.path)
-        ep.do_GET(self)
+        self.do_method(ep.do_GET)
+
+    def do_PUT(self):
+        ep = self.server.match_endpoints(self.path)
+        self.do_method(ep.do_PUT)
 
 
 def sanitize_path(path):
