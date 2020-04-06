@@ -111,9 +111,8 @@ class Downloader(Queue):
             retval = os.system("youtube-dl {} -f bestvideo[ext=mp4]+bestaudio[ext=m4a] -o {}/%\(id\)s.%\(ext\)s"
                                .format("https://youtube.com/watch?v=" + videoid, self.videodir))
             if retval != 0:
-                msg = "youtube-dl failed on {}".format(videoid)
-                logging.error(msg)
-                raise DownloadError(msg)
+                logging.warning("youtube-dl failed on {}".format(videoid))
+                return
             self.scan_storage()
 
         found = False
@@ -122,13 +121,16 @@ class Downloader(Queue):
                 found = True
                 self.player.append(self.videodir + "/" + file + ext)
         if not found:
-            raise DownloadError("file not found after download: {}".format(videoid))
+            logging.warning("file not found after download: {}".format(videoid))
+            return
 
 
 class Player(Queue):
     def consume(self, videofile):
         logging.info("Playing {}".format(videofile))
-        os.system("omxplayer --vol -3300 {}".format(videofile))
+        retval = os.system("omxplayer --vol -3300 {}".format(videofile))
+        if retval != 0:
+            logging.warning("omxplayer failed on {}".format(videofile))
 
     def append(self, videofile):
         logging.info("Added {} to player queue".format(videofile))
