@@ -103,24 +103,20 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.end_headers()
             return
 
-        method_function = None
-        if method == "GET":
-            method_function = ep.do_GET
-        elif method == "POST":
-            method_function = ep.do_POST
-        elif method == "PUT":
-            method_function = ep.do_PUT
-        elif method == "HEAD":
-            method_function = ep.do_HEAD
-
         try:
-            if method_function is None:
+            if method == "GET":
+                ep.do_GET(self)
+            elif method == "POST":
+                ep.do_POST(self)
+            elif method == "PUT":
+                ep.do_PUT(self)
+            elif method == "HEAD":
+                ep.do_HEAD(self)
+            else:
                 raise AttributeError
-            method_function(self)
         except AttributeError:
             self.send_response(405)  # Method not allowed
             self.end_headers()
-            return
 
     def do_POST(self):
         self.do_method("POST")
