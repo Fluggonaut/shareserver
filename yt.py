@@ -190,7 +190,7 @@ def parse_yt_url(url):
     url = url.strip()
 
     # https://www.youtube.com/watch?v=videoid&foo=bar
-    m1 = re.match(r"(https?://)?(www.)?youtube.com/watch\?v=(?P<videoid>[^&/]+)", url)
+    m1 = re.match(r"(https?://)?(www.)?(m.)?youtube.com/watch\?v=(?P<videoid>[^&/]+)", url)
 
     # https://youtu.be/videoid&foo=bar
     m2 = re.match(r"(https?://)?(www.)?youtu.be(?P<videoid>[^&/s]+)", url)
