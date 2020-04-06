@@ -159,7 +159,7 @@ class LinkshareEndpoint(Endpoint):
 
         try:
             link = data["link"]
-        except KeyError:
+        except (KeyError, TypeError):
             logging.warning("link not found in {}".format(data))
             reqhandler.send_response(422)  # Unprocessable entity
             reqhandler.end_headers()
