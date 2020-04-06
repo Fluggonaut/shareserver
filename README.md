@@ -2,4 +2,13 @@ A simple REST server that accepts Youtube links, downloads the corresponding vid
 
 Easily expandable to support other endpoints.
 
-The http server is probably unsafe, do not turn it towards the internet.
+The http server is probably unsafe, do not point it towards the internet.
+
+# TODO
+* Daemonize
+* Nice termination
+* Improve logging
+
+# Features that would be great
+* Playback control
+* Stream instead of download
