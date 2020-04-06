@@ -56,6 +56,8 @@ class TestYoutubeMethods(unittest.TestCase):
         self.assertEqual(yt.parse_yt_url("http://youtube.com/watch?v=ivroIGMAVig&foo=bar"), "ivroIGMAVig")
         self.assertEqual(yt.parse_yt_url("www.youtube.com/watch?v=ivroIGMAVig&foo=bar"), "ivroIGMAVig")
 
+        self.assertEqual(yt.parse_yt_url("https://m.youtube.com/watch?v=ivroIGMAVig"), "ivroIGMAVig")
+
         self.assertEqual(yt.parse_yt_url("https://youtu.be/ivroIGMAVig"), "ivroIGMAVig")
         self.assertEqual(yt.parse_yt_url("https://youtu.be/ivroIGMAVig&foo=bar"), "ivroIGMAVig")
         self.assertEqual(yt.parse_yt_url("http://youtu.be/ivroIGMAVig&foo=bar"), "ivroIGMAVig")
