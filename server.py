@@ -96,24 +96,43 @@ class RESTServer(HTTPServer):
 
 
 class RequestHandler(BaseHTTPRequestHandler):
-    def do_method(self, method_function):
+    def do_method(self, method):
+        ep = self.server.match_endpoints(self.path)
+        if ep is None:
+            self.send_response(404)  # Not found
+            self.end_headers()
+            return
+
+        method_function = None
+        if method == "GET":
+            method_function = ep.do_GET
+        elif method == "POST":
+            method_function = ep.do_POST
+        elif method == "PUT":
+            method_function = ep.do_PUT
+        elif method == "HEAD":
+            method_function = ep.do_HEAD
+
         try:
+            if method_function is None:
+                raise AttributeError
             method_function(self)
         except AttributeError:
             self.send_response(405)  # Method not allowed
             self.end_headers()
+            return
 
     def do_POST(self):
-        ep = self.server.match_endpoints(self.path)
-        self.do_method(ep.do_POST)
+        self.do_method("POST")
 
     def do_GET(self):
-        ep = self.server.match_endpoints(self.path)
-        self.do_method(ep.do_GET)
+        self.do_method("GET")
 
     def do_PUT(self):
-        ep = self.server.match_endpoints(self.path)
-        self.do_method(ep.do_PUT)
+        self.do_method("PUT")
+
+    def do_HEAD(self):
+        self.do_method("HEAD")
 
 
 def sanitize_path(path):
