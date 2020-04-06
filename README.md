@@ -8,6 +8,9 @@ The http server is probably unsafe, do not point it towards the internet.
 * Daemonize
 * Nice termination
 * Improve logging
+* Plugin structure for endpoints
+* Fix tests
+* Improve test coverage
 
 # Features that would be great
 * Playback control
