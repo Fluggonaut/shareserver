@@ -151,6 +151,7 @@ class LinkshareEndpoint(Endpoint):
             reqhandler.end_headers()
             return
         post = reqhandler.rfile.read(clen)
+        logging.debug("POST data: {}".format(post))
         try:
             data = json.loads(post)
         except json.decoder.JSONDecodeError:
