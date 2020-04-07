@@ -194,7 +194,7 @@ def parse_yt_url(url):
     m1 = re.match(r"(https?://)?(www.)?(m.)?youtube.com/watch\?v=(?P<videoid>[^&/]+)", url)
 
     # https://youtu.be/videoid&foo=bar
-    m2 = re.match(r"(https?://)?(www.)?youtu.be/(?P<videoid>[^&/s]+)", url)
+    m2 = re.match(r"(https?://)?(www.)?youtu.be/(?P<videoid>[^&/]+)", url)
 
     if m1 is not None:
         return m1.group("videoid")
