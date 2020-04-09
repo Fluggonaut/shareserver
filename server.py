@@ -47,9 +47,50 @@ class Endpoint:
 
 
 class RESTServer(HTTPServer):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, config, **kwargs):
+        addr = ("", config["port"])
+        super().__init__(addr, RequestHandler, **kwargs)
+
         self.endpoints = []
-        super().__init__(*args, **kwargs)
+        self.plugins = []
+        self.load_plugins()
+
+        print("About to serve forever")
+        self.serve_forever()
+        print("Serving forever")
+
+    def load_plugins(self):
+        # import
+        for el in pkgutil.iter_modules([PLUGINDIR]):
+            plugin = el[1]
+            try:
+                p = pkgutil.importlib.import_module("{}.{}".format(PLUGINDIR, plugin))
+            except Exception as e:
+                logging.error("Unable to load plugin: {} ({})".format(plugin, e))
+                continue
+            else:
+                self.plugins.append(p)
+
+        # load
+        failed = []
+        for i in range(len(self.plugins)):
+            module = self.plugins[i]
+            try:
+                plugin = module.Plugin(self)
+            except AttributeError:
+                failed.append(module)
+                logging.error("Unable to load plugin: {} (No Plugin class)".format(module))
+            except TypeError as e:
+                failed.append(module)
+                logging.error("Unable to load plugin: {} ({})".format(module, e))
+            except Exception as e:
+                failed.append(module)
+                logging.error("Unable to load plugin: {} ({})".format(module, e))
+            else:
+                self.plugins[i] = plugin
+
+        for el in failed:
+            self.plugins.remove(el)
 
     def match_endpoints(self, path):
         """
@@ -96,6 +137,23 @@ class RESTServer(HTTPServer):
         :param endpoint: Endpoint object
         """
         self.endpoints.append(endpoint)
+
+    def shutdown(self):
+        for plugin in self.plugins:
+            try:
+                plugin.shutdown()
+            except AttributeError:
+                logging.warning("Plugin {} has no shutdown method.".format(plugin))
+                pass
+            except Exception as e:
+                logging.error("Plugin {} failed to shut down ({})".format(plugin, e))
+
+        logging.info("Shutting down ...")
+        try:
+            self.shutdown()
+            logging.info("Shutdown complete. Bye.")
+        except Exception as e:
+            logging.error("HTTP Server shutdown failed ({})".format(e))
 
 
 class RequestHandler(BaseHTTPRequestHandler):
@@ -147,50 +205,6 @@ def sanitize_path(path):
     return path
 
 
-def run_server(port):
-    addr = ("", port)
-    rest_server = RESTServer(addr, RequestHandler)
-    load_plugins(rest_server)
-    rest_server.serve_forever()
-
-
-def load_plugins(restserver):
-    # import
-    plugins = []
-    for el in pkgutil.iter_modules([PLUGINDIR]):
-        plugin = el[1]
-        try:
-            p = pkgutil.importlib.import_module("{}.{}".format(PLUGINDIR, plugin))
-        except Exception as e:
-            logging.error("Unable to load plugin: {} ({})".format(plugin, e))
-            continue
-        else:
-            plugins.append(p)
-
-    # load
-    failed = []
-    for i in range(len(plugins)):
-        module = plugins[i]
-        try:
-            plugin = module.Plugin(restserver)
-        except AttributeError:
-            failed.append(module)
-            logging.error("Unable to load plugin: {} (No Plugin class)".format(module))
-        except TypeError as e:
-            failed.append(module)
-            logging.error("Unable to load plugin: {} ({})".format(module, e))
-        except Exception as e:
-            failed.append(module)
-            logging.error("Unable to load plugin: {} ({})".format(module, e))
-        else:
-            plugins[i] = plugin
-
-    for el in failed:
-        plugins.remove(el)
-
-    return plugins
-
-
 def parse_args(args):
     config = {
         "help": False,
@@ -237,7 +251,7 @@ def main(args):
     else:
         logging.basicConfig(level=logging.WARNING)
 
-    run_server(config["port"])
+    RESTServer(config)
 
 
 if __name__ == "__main__":
