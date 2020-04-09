@@ -24,6 +24,15 @@ class PlayerError(Exception):
     pass
 
 
+class Plugin:
+    def __init__(self, rest_server):
+        logging.info("Setting up yt plugin ...")
+        player = Player()
+        downloader = Downloader(VIDEODIR, player)
+        endpoint = LinkshareEndpoint("/linkshare", downloader)
+        rest_server.register_endpoint(endpoint)
+
+
 class Queue(Thread):
     def __init__(self):
         self.lock = Lock()
@@ -194,18 +203,10 @@ def parse_yt_url(url):
     m1 = re.match(r"(https?://)?(www.)?(m.)?youtube.com/watch\?v=(?P<videoid>[^&/]+)", url)
 
     # https://youtu.be/videoid&foo=bar
-    m2 = re.match(r"(https?://)?(www.)?youtu.be/(?P<videoid>[^&/]+)", url)
+    m2 = re.match(r"(https?://)?(www.)?youtu.be/(?P<videoid>[^?&/]+)", url)
 
     if m1 is not None:
         return m1.group("videoid")
     if m2 is not None:
         return m2.group("videoid")
     raise ParseError()
-
-
-def init(rest_server):
-    logging.info("Setting up yt plugin ...")
-    player = Player()
-    downloader = Downloader(VIDEODIR, player)
-    endpoint = LinkshareEndpoint("/linkshare", downloader)
-    rest_server.register_endpoint(endpoint)

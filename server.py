@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
+import pkgutil
 import sys
 import logging
-
-import yt
 
 
 ############
 # config ###
 PORT = 8080
 DEBUG = False
+PLUGINDIR = "endpoints"
 
 # Endpoint URL options
 IGNORE_DOUBLE_SLASH = False  # not implemented yet
@@ -35,7 +35,10 @@ class Endpoint:
     """
     Endpoint to be subclassed and registered with the server.
     Methods that are called on appropriate request:
-    do_GET(requesthandler), do_POST(requesthandler)
+    do_GET(requesthandler),
+    do_POST(requesthandler),
+    do_HEAD(requesthandler),
+    do_PUT(requesthandler)
     If a method is not present, the request is refused (TODO 403 or 404 maybe).
     """
     def __init__(self, path):
@@ -147,8 +150,45 @@ def sanitize_path(path):
 def run_server(port):
     addr = ("", port)
     rest_server = RESTServer(addr, RequestHandler)
-    yt.init(rest_server)
+    load_plugins(rest_server)
     rest_server.serve_forever()
+
+
+def load_plugins(restserver):
+    # import
+    plugins = []
+    for el in pkgutil.iter_modules([PLUGINDIR]):
+        plugin = el[1]
+        try:
+            p = pkgutil.importlib.import_module("{}.{}".format(PLUGINDIR, plugin))
+        except Exception as e:
+            logging.error("Unable to load plugin: {} ({})".format(plugin, e))
+            continue
+        else:
+            plugins.append(p)
+
+    # load
+    failed = []
+    for i in range(len(plugins)):
+        module = plugins[i]
+        try:
+            plugin = module.Plugin(restserver)
+        except AttributeError:
+            failed.append(module)
+            logging.error("Unable to load plugin: {} (No Plugin class)".format(module))
+        except TypeError as e:
+            failed.append(module)
+            logging.error("Unable to load plugin: {} ({})".format(module, e))
+        except Exception as e:
+            failed.append(module)
+            logging.error("Unable to load plugin: {} ({})".format(module, e))
+        else:
+            plugins[i] = plugin
+
+    for el in failed:
+        plugins.remove(el)
+
+    return plugins
 
 
 def parse_args(args):

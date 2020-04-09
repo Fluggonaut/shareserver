@@ -12,6 +12,7 @@ class SimpleEndpoint(Endpoint):
         print("POST data: {}".format(data))
 
 
-def init(rest_server):
-    endpoint = SimpleEndpoint("/")
-    rest_server.register_endpoint(endpoint)
+class Plugin:
+    def __init__(self, rest_server):
+        endpoint = SimpleEndpoint("/")
+        rest_server.register_endpoint(endpoint)

@@ -3,7 +3,7 @@ import unittest
 import sys
 sys.path.append("..")
 import server as restserver
-import yt
+import endpoints.yt as yt
 
 
 class TestServerMethods(unittest.TestCase):
@@ -59,8 +59,8 @@ class TestYoutubeMethods(unittest.TestCase):
         self.assertEqual(yt.parse_yt_url("https://m.youtube.com/watch?v=ivroIGMAVig"), "ivroIGMAVig")
 
         self.assertEqual(yt.parse_yt_url("https://youtu.be/ivroIGMAVig"), "ivroIGMAVig")
-        self.assertEqual(yt.parse_yt_url("https://youtu.be/ivroIGMAVig&foo=bar"), "ivroIGMAVig")
-        self.assertEqual(yt.parse_yt_url("http://youtu.be/ivroIGMAVig&foo=bar"), "ivroIGMAVig")
+        self.assertEqual(yt.parse_yt_url("https://youtu.be/ivroIGMAVig?foo=bar"), "ivroIGMAVig")
+        self.assertEqual(yt.parse_yt_url("http://youtu.be/ivroIGMAVig?foo=bar"), "ivroIGMAVig")
         self.assertEqual(yt.parse_yt_url("www.youtu.be/ivroIGMAVig&foo=bar"), "ivroIGMAVig")
         self.assertEqual(yt.parse_yt_url("https://youtube.com/watch?v=-TRRejlAwo8"), "-TRRejlAwo8")
 
