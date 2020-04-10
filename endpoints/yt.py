@@ -26,6 +26,7 @@ class PlayerError(Exception):
 
 class Plugin:
     def __init__(self, rest_server):
+        self.name = "yt"
         logging.info("Setting up yt plugin ...")
         player = Player()
         downloader = Downloader(VIDEODIR, player)

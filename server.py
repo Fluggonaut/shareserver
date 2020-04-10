@@ -74,16 +74,11 @@ class RESTServer(HTTPServer):
         # load
         failed = []
         for i in range(len(self.plugins)):
-            module = self.plugins[i]
+            module = self.plugins[i][0]
             try:
                 plugin = module.Plugin(self)
-            except AttributeError:
-                failed.append(module)
-                logging.error("Unable to load plugin: {} (No Plugin class)".format(module))
-            except TypeError as e:
-                failed.append(module)
-                logging.error("Unable to load plugin: {} ({})".format(module, e))
-            except Exception as e:
+                logging.info("Loaded Plugin: {}".format(plugin.name))
+            except (AttributeError, TypeError, Exception) as e:
                 failed.append(module)
                 logging.error("Unable to load plugin: {} ({})".format(module, e))
             else:
@@ -158,13 +153,17 @@ class RESTServer(HTTPServer):
 
 class RequestHandler(BaseHTTPRequestHandler):
     def do_method(self, method):
+        logging.debug("Incoming {} on {}".format(method, self.path))
+
         ep = self.server.match_endpoints(self.path)
         if ep is None:
+            logging.debug("No matching endpoint found, sending 404")
             self.send_response(404)  # Not found
             self.end_headers()
             return
 
         try:
+            logging.debug("Sending request to endpoint {}".format(ep.path))
             if method == "GET":
                 ep.do_GET(self)
             elif method == "POST":
@@ -176,6 +175,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             else:
                 raise AttributeError
         except AttributeError:
+            logging.debug("Endpoint {} does not support method {}, sending 405".format(ep.path, method))
             self.send_response(405)  # Method not allowed
             self.end_headers()
 

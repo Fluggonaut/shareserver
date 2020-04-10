@@ -14,5 +14,6 @@ class SimpleEndpoint(Endpoint):
 
 class Plugin:
     def __init__(self, rest_server):
+        self.name = "debug"
         endpoint = SimpleEndpoint("/")
-        rest_server.register_endpoint(endpoint)
+        # rest_server.register_endpoint(endpoint)
