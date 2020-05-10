@@ -74,7 +74,7 @@ class RESTServer(HTTPServer):
         # load
         failed = []
         for i in range(len(self.plugins)):
-            module = self.plugins[i][0]
+            module = self.plugins[i]
             try:
                 plugin = module.Plugin(self)
                 logging.info("Loaded Plugin: {}".format(plugin.name))
