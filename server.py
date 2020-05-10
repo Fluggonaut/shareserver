@@ -166,7 +166,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             return None
 
         assert(self.path.startswith(self.ep.path))
-        return self.path[len(self.ep):]
+        return self.path[len(self.ep.path):]
 
     def do_method(self, method):
         logging.debug("Incoming {} on {}".format(method, self.path))
