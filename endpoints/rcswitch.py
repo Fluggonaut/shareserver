@@ -18,12 +18,19 @@ class RCEndpoint(Endpoint):
         route[1] = route[1].lower()
         if route[0].lower() not in ["a", "b", "c", "d"]:
             logging.warning("Invalid channel: {}".format(route[0]))
+            reqhandler.send_response(400)  # Bad Request
+            reqhandler.end_headers()
             return
         if route[1] not in ["on", "off"]:
             logging.info("Invalid toggle value: {}".format(route[1]))
+            reqhandler.send_response(400)  # Bad Request
+            reqhandler.end_headers()
             return
 
         os.system("{} {} {}".format(RCSWITCHCMD, route[0], route[1]))
+
+        reqhandler.send_response(202)  # Accepted
+        reqhandler.end_headers()
 
 
 class Plugin:
