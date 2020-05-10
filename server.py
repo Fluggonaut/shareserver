@@ -181,13 +181,13 @@ class RequestHandler(BaseHTTPRequestHandler):
         try:
             logging.debug("Sending request to endpoint {}".format(ep.path))
             if method == "GET":
-                ep.do_GET(self)
+                self.ep.do_GET(self)
             elif method == "POST":
-                ep.do_POST(self)
+                self.ep.do_POST(self)
             elif method == "PUT":
-                ep.do_PUT(self)
+                self.ep.do_PUT(self)
             elif method == "HEAD":
-                ep.do_HEAD(self)
+                self.ep.do_HEAD(self)
             else:
                 raise AttributeError
         except AttributeError:
