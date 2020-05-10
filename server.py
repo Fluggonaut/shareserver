@@ -165,7 +165,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         if self.ep is None:
             return None
 
-        assert(self.path.startswith(self.ep))
+        assert(self.path.startswith(self.ep.path))
         return self.path[len(self.ep):]
 
     def do_method(self, method):
