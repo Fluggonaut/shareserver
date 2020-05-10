@@ -10,7 +10,6 @@ class RCEndpoint(Endpoint):
         print("Incoming GET on {}".format(reqhandler.path))
         route = reqhandler.route.split("/")
         if route[0] == "" and len(route) > 1:
-            logging.warning("This should not happen, please investigate")
             route = route[1:]
 
         if len(route) < 2:
