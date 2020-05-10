@@ -132,6 +132,7 @@ class RESTServer(HTTPServer):
         :param endpoint: Endpoint object
         """
         self.endpoints.append(endpoint)
+        logging.info("Registered endpoint: {}".format(endpoint.path))
 
     def shutdown(self):
         for plugin in self.plugins:
@@ -152,12 +153,27 @@ class RESTServer(HTTPServer):
 
 
 class RequestHandler(BaseHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        self.ep = None
+        self._route = None
+        super().__init__(*args, **kwargs)
+
+    @property
+    def route(self):
+        if self._route is not None:
+            return self._route
+        if self.ep is None:
+            return None
+
+        assert(self.path.startswith(self.ep))
+        return self.path[len(self.ep):]
+
     def do_method(self, method):
         logging.debug("Incoming {} on {}".format(method, self.path))
 
-        ep = self.server.match_endpoints(self.path)
-        if ep is None:
-            logging.debug("No matching endpoint found, sending 404")
+        self.ep = self.server.match_endpoints(self.path)
+        if self.ep is None:
+            logging.info("No matching endpoint for {} found, sending 404".format(self.path))
             self.send_response(404)  # Not found
             self.end_headers()
             return
