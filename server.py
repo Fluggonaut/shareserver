@@ -179,7 +179,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             return
 
         try:
-            logging.debug("Sending request to endpoint {}".format(ep.path))
+            logging.debug("Sending request to endpoint {}".format(self.ep.path))
             if method == "GET":
                 self.ep.do_GET(self)
             elif method == "POST":
@@ -191,7 +191,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             else:
                 raise AttributeError
         except AttributeError:
-            logging.debug("Endpoint {} does not support method {}, sending 405".format(ep.path, method))
+            logging.debug("Endpoint {} does not support method {}, sending 405".format(self.ep.path, method))
             self.send_response(405)  # Method not allowed
             self.end_headers()
 
