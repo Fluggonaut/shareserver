@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from threading import Lock
+from util import Stack
 import pkgutil
 import sys
 import logging
+import json
 
 
 ############
@@ -25,6 +28,21 @@ usage = "Usage: {} [OPTIONS]\n\n" \
         "  --debug\n" \
         "  --yttest YOUTUBELINK\n" \
         "".format(sys.argv[0])
+
+
+class Error:
+    def __init__(self, endpoint, msg, ts):
+        self.msg = msg
+        self.endpoint = endpoint
+        self.timestamp = ts
+
+    def __str__(self):
+        d = {
+            "plugin": self.endpoint,
+            "msg": self.msg,
+            "timestamp": self.timestamp,
+        }
+        return json.dumps(d)
 
 
 class ParseError(Exception):
@@ -55,9 +73,15 @@ class RESTServer(HTTPServer):
         self.plugins = []
         self.load_plugins()
 
-        print("About to serve forever")
-        self.serve_forever()
-        print("Serving forever")
+        self._endpoints_to_register = None
+        self._errors = Stack()
+        self._error_lock = Lock()
+
+        logging.info("Running server.")
+        try:
+            self.serve_forever()
+        except KeyboardInterrupt:
+            self.shutdown()
 
     def load_plugins(self):
         # import
@@ -76,13 +100,19 @@ class RESTServer(HTTPServer):
         for i in range(len(self.plugins)):
             module = self.plugins[i]
             try:
+                self._endpoints_to_register = []
                 plugin = module.Plugin(self)
                 logging.info("Loaded Plugin: {}".format(plugin.name))
             except (AttributeError, TypeError, Exception) as e:
                 failed.append(module)
                 logging.error("Unable to load plugin: {} ({})".format(module, e))
-            else:
-                self.plugins[i] = plugin
+                continue
+
+            self.plugins[i] = plugin
+            for endpoint in self._endpoints_to_register:
+                self.endpoints.append((endpoint, plugin))
+                logging.info("Registered endpoint: {}".format(endpoint.path))
+            self._endpoints_to_register = None
 
         for el in failed:
             self.plugins.remove(el)
@@ -95,7 +125,9 @@ class RESTServer(HTTPServer):
         :return: endpoint object that matches; None if no match is found
         """
         path = sanitize_path(path).split("/")
-        candidates = self.endpoints.copy()
+        candidates = []
+        for el in self.endpoints:
+            candidates.append(el[0])
         matches = []
         todel = []
 
@@ -131,25 +163,74 @@ class RESTServer(HTTPServer):
         Registers and endpoint.
         :param endpoint: Endpoint object
         """
-        self.endpoints.append(endpoint)
-        logging.info("Registered endpoint: {}".format(endpoint.path))
+        if self._endpoints_to_register is None:
+            logging.error("Endpoints must be registered in the Plugin constructor ({})".format(endpoint.path))
+            return
+        if endpoint not in self.endpoints and endpoint not in self._endpoints_to_register:
+            self._endpoints_to_register.append(endpoint)
+        else:
+            logging.error("Endpoint already registered: {}".format(endpoint.path))
+
+    def report_error(self, endpoint, msg, timestamp=None):
+        """
+        Reports an error to the server error stack.
+        :param endpoint: Endpoint object the error occured in.
+        :param msg: Error message.
+        :param timestamp: Error timestamp; uses now if ommited.
+        :return:
+        """
+        error = Error(endpoint, msg, timestamp)
+        self._error_lock.acquire()
+        self._errors.push(error)
+        self._error_lock.release()
+
+    def consume_errors(self):
+        """
+        Generator for all errors on the server error stack. Errors are removed from the stack (popped).
+        """
+        self._error_lock.acquire()
+        while True:
+            try:
+                yield self._errors.pop()
+            except IndexError:
+                break
+        self._error_lock.release()
+
+    def consume_error(self):
+        """
+        Pops one error from the server error stack (read and remove).
+        :return: Last error
+        """
+        self._error_lock.acquire()
+        r = self._errors.pop()
+        self._error_lock.release()
+        return r
+
+    def last_error(self):
+        """
+        Reads the last error from the error stack. Does not remove it.
+        :return: Last error
+        """
+        self._error_lock.acquire()
+        r = self._errors.top()
+        self._error_lock.release()
+        return r
 
     def shutdown(self):
         for plugin in self.plugins:
             try:
                 plugin.shutdown()
             except AttributeError:
-                logging.warning("Plugin {} has no shutdown method.".format(plugin))
+                logging.info("Plugin {} has no shutdown method.".format(plugin))
                 pass
             except Exception as e:
                 logging.error("Plugin {} failed to shut down ({})".format(plugin, e))
 
-        logging.info("Shutting down ...")
+        logging.info("Shutting down.")
         try:
             self.shutdown()
-            logging.info("Shutdown complete. Bye.")
         except Exception as e:
-            logging.error("HTTP Server shutdown failed ({})".format(e))
+            logging.error("Clean shutdown failed ({})".format(e))
 
 
 class RequestHandler(BaseHTTPRequestHandler):

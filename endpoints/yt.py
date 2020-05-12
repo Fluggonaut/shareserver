@@ -27,11 +27,16 @@ class PlayerError(Exception):
 class Plugin:
     def __init__(self, rest_server):
         self.name = "yt"
+        self.server = rest_server
+
         logging.info("Setting up yt plugin ...")
-        player = Player()
-        downloader = Downloader(VIDEODIR, player)
-        endpoint = LinkshareEndpoint("/linkshare", downloader)
-        rest_server.register_endpoint(endpoint)
+        player = Player(self)
+        downloader = Downloader(VIDEODIR, player, self)
+        self.endpoint = LinkshareEndpoint("/linkshare", downloader)
+        rest_server.register_endpoint(self.endpoint)
+
+    def report_error(self, msg):
+        self.server.report_error(self.endpoint, msg)
 
 
 class Queue(Thread):
@@ -66,16 +71,18 @@ class Queue(Thread):
 
 
 class Downloader(Queue):
-    def __init__(self, videodir, player):
+    def __init__(self, videodir, player, plugin=None):
         """
         Download handler. Use append() to request a download; calls player.append() on download success.
         :param videodir: Directory where the videos are to be stored
         :param player: Player object
+        :param plugin: Plugin object to report errors to. Can be omitted.
         """
         self.videodir = videodir
         if self.videodir.endswith("/"):
             self.videodir = self.videodir[:-1]
         self.player = player
+        self.plugin = plugin
         self.storage = []
 
         # mkdir videodir
@@ -121,7 +128,10 @@ class Downloader(Queue):
             retval = os.system("youtube-dl {} -f bestvideo[ext=mp4]+bestaudio[ext=m4a] -o {}/%\(id\)s.%\(ext\)s"
                                .format("https://youtube.com/watch?v=" + videoid, self.videodir))
             if retval != 0:
-                logging.warning("youtube-dl failed on {}".format(videoid))
+                msg = "youtube-dl failed on {}".format(videoid)
+                logging.warning(msg)
+                if self.plugin:
+                    self.plugin.report_error(msg)
                 return
             self.scan_storage()
 
@@ -131,16 +141,29 @@ class Downloader(Queue):
                 found = True
                 self.player.append(self.videodir + "/" + file + ext)
         if not found:
-            logging.warning("file not found after download: {}".format(videoid))
+            msg = "file not found after download: {}".format(videoid)
+            if self.plugin:
+                self.plugin.report_error(msg)
+            logging.warning(msg)
             return
 
 
 class Player(Queue):
+    def __init__(self, plugin=None):
+        """
+        :param plugin: Plugin object to report errors to. Can be omitted.
+        """
+        self.plugin = plugin
+        super().__init__()
+
     def consume(self, videofile):
         logging.info("Playing {}".format(videofile))
         retval = os.system("omxplayer --vol -3300 {}".format(videofile))
         if retval != 0:
-            logging.warning("omxplayer failed on {}".format(videofile))
+            msg = "omxplayer failed on {}".format(videofile)
+            logging.warning(msg)
+            if self.plugin:
+                self.plugin.report_error(msg)
 
     def append(self, videofile):
         logging.info("Added {} to player queue".format(videofile))
@@ -173,14 +196,18 @@ class LinkshareEndpoint(Endpoint):
         try:
             link = data["link"]
         except (KeyError, TypeError):
-            logging.warning("link not found in {}".format(data))
+            msg = "link not found in {}".format(data)
+            logging.warning(msg)
+            reqhandler.report_error(self, msg)
             reqhandler.send_response(422)  # Unprocessable entity
             reqhandler.end_headers()
             return
         try:
             link = parse_yt_url(link)
         except ParseError:
-            logging.warning("Unknown Youtube link: {}".format(link))
+            msg = "Unknown Youtube link: {}".format(link)
+            logging.warning(msg)
+            reqhandler.report_error(self, msg)
             reqhandler.send_response(422)  # Unprocessable entity
             reqhandler.end_headers()
             return
