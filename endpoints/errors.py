@@ -16,12 +16,12 @@ class ErrorReporting(Endpoint):
             reqhandler.end_headers()
             return
 
-        if route[1] == "all":
+        if route[0] == "all":
             report = []
             for el in reqhandler.server.consume_errors():
                 report.append(str(el))
             reqhandler.server.wfile.write(report)
-        elif route[1] == "last":
+        elif route[0] == "last":
             last = reqhandler.server.errors.pop()
             reqhandler.server.wfile.write(last)
         else:
