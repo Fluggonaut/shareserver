@@ -31,7 +31,7 @@ class ErrorReporting(Endpoint):
             reqhandler.end_headers()
             return
 
-        reqhandler.wfile.write(json.dumps(report))
+        reqhandler.wfile.write(json.dumps(report).encode("utf-8"))
         reqhandler.send_response(200)  # OK
         reqhandler.end_headers()
         return
