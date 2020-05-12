@@ -4,9 +4,9 @@ class Stack:
 
     def is_empty(self):
         if not self._stack:
-            return False
-        else:
             return True
+        else:
+            return False
 
     def push(self, el):
         self._stack.append(el)
