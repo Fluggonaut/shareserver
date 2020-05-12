@@ -22,7 +22,7 @@ class ErrorReporting(Endpoint):
                 report.append(str(el))
             reqhandler.server.wfile.write(report)
         elif route[0] == "last":
-            last = reqhandler.server.errors.pop()
+            last = reqhandler.server.last_error()
             reqhandler.server.wfile.write(last)
         else:
             logging.info("Incorrect error reporting access: {}".format(reqhandler.route))
