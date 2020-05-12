@@ -206,6 +206,9 @@ class RESTServer(HTTPServer):
         self._error_lock.release()
         return r
 
+    def has_error(self):
+        return not self._errors.is_empty()
+
     def last_error(self):
         """
         Reads the last error from the error stack. Does not remove it.
