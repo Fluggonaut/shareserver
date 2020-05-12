@@ -18,7 +18,7 @@ class RCEndpoint(Endpoint):
             return
         route[0] = route[0].lower()
         route[1] = route[1].lower()
-        if route[0].lower() not in ["a", "b", "c", "d"]:
+        if route[0].lower() not in ["a", "b", "c", "d", "all"]:
             logging.warning("Invalid channel: {}".format(route[0]))
             reqhandler.send_response(400)  # Bad Request
             reqhandler.end_headers()
@@ -29,7 +29,11 @@ class RCEndpoint(Endpoint):
             reqhandler.end_headers()
             return
 
-        r = os.system("{} {} {}".format(RCSWITCHCMD, route[0], route[1]))
+        if route[0] is "all":
+            for el in ["a", "b", "c", "d"]:
+                rcswitch(el, route[1])
+        else:
+            rcswitch(route[0], route [1])
 
         reqhandler.send_response(202)  # Accepted
         reqhandler.end_headers()
@@ -40,3 +44,7 @@ class Plugin:
         self.name = "rcswitch"
         endpoint = RCEndpoint("rcswitch")
         rest_server.register_endpoint(endpoint)
+
+
+def rcswitch(channel, toggle):
+    return os.system("{} {} {}".format(RCSWITCHCMD, channel, toggle))
