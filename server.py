@@ -44,7 +44,7 @@ class Error:
         self.msg = msg
         self.endpoint = endpoint
         self.timestamp = None
-        if ts is not None:
+        if ts is None:
             self.timestamp = datetime.now()
 
     def to_dict(self):
