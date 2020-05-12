@@ -44,14 +44,15 @@ class Error:
         self.endpoint = endpoint
         self.timestamp = ts
 
-    def __str__(self):
-        d = {
+    def to_dict(self):
+        return {
             "plugin": self.endpoint,
             "msg": self.msg,
             "timestamp": self.timestamp,
         }
-        return json.dumps(d)
 
+    def to_json(self):
+        return json.dumps(self.to_dict())
 
 
 class Endpoint:

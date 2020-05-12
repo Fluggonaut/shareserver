@@ -21,10 +21,10 @@ class ErrorReporting(Endpoint):
         report = []
         if route[0] == "all":
             for el in server.consume_errors():
-                report.append(el)
+                report.append(el.to_dict())
         elif route[0] == "last":
             if server.has_error():
-                report.append(server.last_error())
+                report.append(server.last_error().to_dict())
         else:
             logging.info("Incorrect error reporting access: {}".format(reqhandler.route))
             reqhandler.send_response(404)  # Not found
