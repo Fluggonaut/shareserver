@@ -8,7 +8,7 @@ RCSWITCHCMD = "rcswitch"
 class RCEndpoint(Endpoint):
     def do_GET(self, reqhandler):
         route = reqhandler.route.split("/")
-        if route[0] == "" and len(route) > 1:
+        if len(route) > 0 and route[0] == "":
             route = route[1:]
 
         if len(route) < 2:

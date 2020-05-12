@@ -5,8 +5,10 @@ import logging
 class ErrorReporting(Endpoint):
     def do_GET(self, reqhandler):
         route = reqhandler.route.split("/")
-        if route[0] == "" and len(route) > 1:
+        if len(route) > 0 and route[0] == "":
             route = route[1:]
+        if len(route) > 0 and route[-1] == "":
+            route = route[:-1]
 
         if len(route) < 1:
             logging.info("Incorrect error reporting access: {}".format(reqhandler.route))
