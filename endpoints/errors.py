@@ -24,7 +24,7 @@ class ErrorReporting(Endpoint):
                 report.append(el.serializable())
         elif route[0] == "last":
             if server.has_error():
-                report.append(server.last_error().serializable())
+                report.append(server.consume_error().serializable())
         else:
             logging.info("Incorrect error reporting access: {}".format(reqhandler.route))
             reqhandler.send_response(404)  # Not found
