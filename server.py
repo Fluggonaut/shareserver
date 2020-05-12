@@ -30,6 +30,14 @@ usage = "Usage: {} [OPTIONS]\n\n" \
         "".format(sys.argv[0])
 
 
+class ParseError(Exception):
+    pass
+
+
+class MethodError(Exception):
+    pass
+
+
 class Error:
     def __init__(self, endpoint, msg, ts):
         self.msg = msg
@@ -44,9 +52,6 @@ class Error:
         }
         return json.dumps(d)
 
-
-class ParseError(Exception):
-    pass
 
 
 class Endpoint:
@@ -273,8 +278,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             elif method == "HEAD":
                 self.ep.do_HEAD(self)
             else:
-                raise AttributeError
-        except AttributeError:
+                raise MethodError
+        except MethodError:
             logging.debug("Endpoint {} does not support method {}, sending 405".format(self.ep.path, method))
             self.send_response(405)  # Method not allowed
             self.end_headers()
