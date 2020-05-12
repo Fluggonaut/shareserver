@@ -40,22 +40,22 @@ class MethodError(Exception):
 
 
 class Error:
-    def __init__(self, endpoint, msg, ts=None):
+    def __init__(self, plugin, msg, ts=None):
         self.msg = msg
-        self.endpoint = endpoint
+        self.plugin = plugin
         self.timestamp = None
         if ts is None:
             self.timestamp = datetime.now()
 
-    def to_dict(self):
+    def serializable(self):
         return {
-            "plugin": self.endpoint,
+            "plugin": self.plugin.name,
             "msg": self.msg,
             "timestamp": self.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
         }
 
     def to_json(self):
-        return json.dumps(self.to_dict())
+        return json.dumps(self.serializable())
 
 
 class Endpoint:
