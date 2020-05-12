@@ -36,7 +36,7 @@ class Plugin:
         rest_server.register_endpoint(self.endpoint)
 
     def report_error(self, msg):
-        self.server.report_error(self.endpoint, msg)
+        self.server.report_error(self, msg)
 
 
 class Queue(Thread):
