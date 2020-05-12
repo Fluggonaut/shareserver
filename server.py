@@ -2,6 +2,7 @@
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from threading import Lock
+from datetime import datetime
 from util import Stack
 import pkgutil
 import sys
@@ -39,16 +40,18 @@ class MethodError(Exception):
 
 
 class Error:
-    def __init__(self, endpoint, msg, ts):
+    def __init__(self, endpoint, msg, ts=None):
         self.msg = msg
         self.endpoint = endpoint
-        self.timestamp = ts
+        self.timestamp = None
+        if ts is not None:
+            self.timestamp = datetime.now()
 
     def to_dict(self):
         return {
             "plugin": self.endpoint,
             "msg": self.msg,
-            "timestamp": self.timestamp,
+            "timestamp": self.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
         }
 
     def to_json(self):
