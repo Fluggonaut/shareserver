@@ -8,8 +8,8 @@ class ErrorReporting(Endpoint):
         if route[0] == "" and len(route) > 1:
             route = route[1:]
 
-        if len(route) < 2:
-            logging.info("Incorrect rswitch access: {}".format(reqhandler.route))
+        if len(route) < 1:
+            logging.info("Incorrect error reporting access: {}".format(reqhandler.route))
             reqhandler.send_response(404)  # Not found
             reqhandler.end_headers()
             return
@@ -23,6 +23,7 @@ class ErrorReporting(Endpoint):
             last = reqhandler.server.errors.pop()
             reqhandler.server.wfile.write(last)
         else:
+            logging.info("Incorrect error reporting access: {}".format(reqhandler.route))
             reqhandler.send_response(404)  # Not found
             reqhandler.end_headers()
             return
