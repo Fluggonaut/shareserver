@@ -199,7 +199,7 @@ class LinkshareEndpoint(Endpoint):
         except (KeyError, TypeError):
             msg = "link not found in {}".format(data)
             logging.warning(msg)
-            self.plugin.report_error(self, msg)
+            self.plugin.report_error(msg)
             reqhandler.send_response(422)  # Unprocessable entity
             reqhandler.end_headers()
             return
