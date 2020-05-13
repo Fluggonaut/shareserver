@@ -55,7 +55,7 @@ def format_errors(errorlist):
     r = ""
     for i in range(len(errorlist)):
         error = errorlist[i].serializable()
-        r += "{} ({})\n{}\n".format(error["timestamp"], error["plugin"], error["msg"])
+        r += "{}; {}:\n{}\n".format(error["timestamp"], error["plugin"], error["msg"])
         if i < len(errorlist) - 1:
             r += "\n"
 
