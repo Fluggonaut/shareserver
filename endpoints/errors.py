@@ -3,6 +3,13 @@ import logging
 import json
 
 
+class Plugin:
+    def __init__(self, rest_server):
+        self.name = "errors"
+        endpoint = ErrorReporting("sys/errors")
+        rest_server.register_endpoint(endpoint)
+
+
 class ErrorReporting(Endpoint):
     def do_GET(self, reqhandler):
         route = reqhandler.route.split("/")
@@ -21,10 +28,10 @@ class ErrorReporting(Endpoint):
         report = []
         if route[0] == "all":
             for el in server.consume_errors():
-                report.append(el.serializable())
+                report.append(el)
         elif route[0] == "last":
             if server.has_error():
-                report.append(server.consume_error().serializable())
+                report.append(server.consume_error())
         else:
             logging.info("Incorrect error reporting access: {}".format(reqhandler.route))
             reqhandler.send_response(404)  # Not found
@@ -33,12 +40,23 @@ class ErrorReporting(Endpoint):
 
         reqhandler.send_response(200)  # OK
         reqhandler.end_headers()
-        reqhandler.wfile.write(json.dumps(report).encode("utf-8"))
+        reqhandler.wfile.write(format_errors(report).encode("utf-8"))
         return
 
 
-class Plugin:
-    def __init__(self, rest_server):
-        self.name = "errors"
-        endpoint = ErrorReporting("sys/errors")
-        rest_server.register_endpoint(endpoint)
+def format_errors_json(errorlist):
+    r = []
+    for el in errorlist:
+        r.append(el.serializable())
+    return json.dumps(r)
+
+
+def format_errors(errorlist):
+    r = ""
+    for i in range(len(errorlist)):
+        error = errorlist[i].serializable()
+        r += "{} ({})\n{}\n".format(error["timestamp"], error["plugin"], error["msg"])
+        if i < len(errorlist) - 1:
+            r += "\n"
+
+    return r
