@@ -32,7 +32,7 @@ class Plugin:
         logging.info("Setting up yt plugin ...")
         player = Player(self)
         downloader = Downloader(VIDEODIR, player, self)
-        self.endpoint = LinkshareEndpoint("/linkshare", downloader)
+        self.endpoint = LinkshareEndpoint("/linkshare", downloader, self)
         rest_server.register_endpoint(self.endpoint)
 
     def report_error(self, msg):
@@ -171,8 +171,9 @@ class Player(Queue):
 
 
 class LinkshareEndpoint(Endpoint):
-    def __init__(self, path, downloader):
+    def __init__(self, path, downloader, plugin):
         self.downloader = downloader
+        self.plugin = plugin
         super().__init__(path)
 
     def do_POST(self, reqhandler):
@@ -198,7 +199,7 @@ class LinkshareEndpoint(Endpoint):
         except (KeyError, TypeError):
             msg = "link not found in {}".format(data)
             logging.warning(msg)
-            reqhandler.report_error(self, msg)
+            self.plugin.report_error(self, msg)
             reqhandler.send_response(422)  # Unprocessable entity
             reqhandler.end_headers()
             return
@@ -207,7 +208,7 @@ class LinkshareEndpoint(Endpoint):
         except ParseError:
             msg = "Unknown Youtube link: {}".format(link)
             logging.warning(msg)
-            reqhandler.report_error(self, msg)
+            self.plugin.report_error(msg)
             reqhandler.send_response(422)  # Unprocessable entity
             reqhandler.end_headers()
             return
