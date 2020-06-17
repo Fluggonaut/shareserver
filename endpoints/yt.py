@@ -11,6 +11,13 @@ import json
 VIDEODIR = "videos"
 #######
 
+"""
+Endpoint:
+GET /linkshare
+    Payload:
+    {"link": <youtubelink>}
+"""
+
 
 class ParseError(Exception):
     pass

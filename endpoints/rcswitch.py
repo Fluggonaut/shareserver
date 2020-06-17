@@ -4,6 +4,13 @@ import os
 
 RCSWITCHCMD = "rcswitch"
 
+"""
+Endoint:
+GET rcswitch/<switch>/<toggle>
+switch out of [a, b, c, d, all]
+toggle out of [on, off]
+"""
+
 
 class RCEndpoint(Endpoint):
     def do_GET(self, reqhandler):
