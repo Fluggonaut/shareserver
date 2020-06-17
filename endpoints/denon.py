@@ -74,7 +74,7 @@ class SimpleEndpoint(Endpoint):
         except Exception as e:
             self.server.report_error(self, str(e))
             r = 500  # internal server error
-        reqhandler.send_reponse(r)
+        reqhandler.send_response(r)
         reqhandler.end_headers()
 
 

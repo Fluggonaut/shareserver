@@ -40,7 +40,7 @@ class RCEndpoint(Endpoint):
             for el in ["a", "b", "c", "d"]:
                 rcswitch(el, route[1])
         else:
-            rcswitch(route[0], route [1])
+            rcswitch(route[0], route[1])
 
         reqhandler.send_response(202)  # Accepted
         reqhandler.end_headers()
