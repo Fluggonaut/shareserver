@@ -83,11 +83,11 @@ class Queue(Thread):
 
 class StreamPlayer(Thread):
     def __init__(self, url, plugin=None, videoid=None, name=None):
+        super().__init__()
         self.url = url
         self.plugin = plugin
         self.videoid = videoid
         self.name = name
-        super().__init__()
 
     def run(self):
         cmd = ["omxplayer", "--vol", str(DEFAULTVOL), self.url]
@@ -239,7 +239,7 @@ class LinkshareEndpoint(Endpoint):
         self.downloader = downloader
         self.streamer = streamer
         self.plugin = plugin
-        self.mode = Mode.DOWNLOAD
+        self.mode = Mode.STREAM
         self.operator = self.downloader
         super().__init__(path)
 
