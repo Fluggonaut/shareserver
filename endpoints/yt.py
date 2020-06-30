@@ -1,14 +1,17 @@
 from server import Endpoint
 from threading import Thread, Lock, Event
+from enum import Enum
 import logging
 import os
 import re
 import json
+import subprocess
 
 
 ###########
 # config ##
 VIDEODIR = "videos"
+DEFAULTVOL = -3300
 #######
 
 """
@@ -39,7 +42,8 @@ class Plugin:
         logging.info("Setting up yt plugin ...")
         player = Player(self)
         downloader = Downloader(VIDEODIR, player, self)
-        self.endpoint = LinkshareEndpoint("/linkshare", downloader, self)
+        streamer = Streamer(VIDEODIR, player, self)
+        self.endpoint = LinkshareEndpoint("/linkshare", downloader, streamer, self)
         rest_server.register_endpoint(self.endpoint)
 
     def report_error(self, msg):
@@ -75,6 +79,54 @@ class Queue(Thread):
                 self.update_event.clear()
             for el in to_consume:
                 self.consume(el)
+
+
+class StreamPlayer(Thread):
+    def __init__(self, url, plugin=None, videoid=None, name=None):
+        self.url = url
+        self.plugin = plugin
+        self.videoid = videoid
+        self.name = name
+        super().__init__()
+
+    def run(self):
+        cmd = ["omxplayer", "--vol", str(DEFAULTVOL), self.url]
+        proc = subprocess.run(cmd, capture_output=True)
+        if proc.returncode != 0:
+            msg = "{} omxplayer failed on {} with error {}".format(self.name, self.videoid, proc.stdout.decode("utf-8"))
+            logging.warning(msg)
+            if self.plugin:
+                self.plugin.report_error(msg)
+
+
+class Streamer(Queue):
+    def __init__(self, videodir, player, plugin=None):
+        """
+        Streaming player. Use append() to request a stream.
+        :param videodir: Not used
+        :param player: Player object
+        :param plugin: Plugin object to report errors to. Can be omitted.
+        """
+        self.plugin = plugin
+        super().__init__()
+
+    def append(self, videoid):
+        logging.info("Added {} to streaming queue".format(videoid))
+        super().append(videoid)
+
+    def consume(self, videoid):
+        """
+        Overrides super method. Streams video videoid.
+        """
+        stdout = subprocess.run(["youtube-dl", "-g", videoid], capture_output=True).stdout.decode("utf-8").split("\n")
+        if len(stdout) != 3:
+            self.plugin.report_error("youtube-dl -g failed on {}".format(videoid))
+            raise DownloadError
+        video, audio = stdout[:-1]
+        video = StreamPlayer(video, plugin=self.plugin, videoid=videoid, name="Video")
+        audio = StreamPlayer(audio, plugin=self.plugin, videoid=videoid, name="Audio")
+        video.start()
+        audio.start()
 
 
 class Downloader(Queue):
@@ -165,7 +217,7 @@ class Player(Queue):
 
     def consume(self, videofile):
         logging.info("Playing {}".format(videofile))
-        retval = os.system("omxplayer --vol -3300 {}".format(videofile))
+        retval = os.system("omxplayer --vol {} {}".format(DEFAULTVOL, videofile))
         if retval != 0:
             msg = "omxplayer failed on {}".format(videofile)
             logging.warning(msg)
@@ -177,11 +229,61 @@ class Player(Queue):
         super().append(videofile)
 
 
+class Mode(Enum):
+    DOWNLOAD = 0
+    STREAM = 1
+
+
 class LinkshareEndpoint(Endpoint):
-    def __init__(self, path, downloader, plugin):
+    def __init__(self, path, downloader, streamer, plugin):
         self.downloader = downloader
+        self.streamer = streamer
         self.plugin = plugin
+        self.mode = Mode.DOWNLOAD
+        self.operator = self.downloader
         super().__init__(path)
+
+    def do_GET(self, reqhandler):
+        route = reqhandler.route.split("/")
+        if len(route) > 0 and route[0] == "":
+            route = route[1:]
+
+        # Report mode
+        if len(route) == 0:
+            found = None
+            if self.mode == Mode.DOWNLOAD:
+                found = "Download"
+            elif self.mode == Mode.STREAM:
+                found = "Stream"
+            if not found:
+                reqhandler.send_response(500)
+                reqhandler.end_headers()
+                return
+            else:
+                reqhandler.send_response(200)
+                reqhandler.end_headers()
+                reqhandler.wfile.write(found.encode("utf-8"))
+                return
+
+        # Change mode
+        if len(route) != 1 or route[0] not in ["download", "stream"]:
+            reqhandler.send_response(400)  # Bad Request
+            reqhandler.end_headers()
+            return
+        else:
+            if route[0] == "download":
+                self.mode = Mode.DOWNLOAD
+                self.operator = self.downloader
+            elif route[0] == "stream":
+                self.mode = Mode.STREAM
+                self.operator = self.streamer
+            else:
+                reqhandler.send_response(500)
+                reqhandler.end_headers()
+                return
+            reqhandler.send_response(200)
+            reqhandler.end_headers()
+            return
 
     def do_POST(self, reqhandler):
         logging.debug("Incoming POST on {}".format(reqhandler.path))
@@ -219,7 +321,7 @@ class LinkshareEndpoint(Endpoint):
             reqhandler.send_response(422)  # Unprocessable entity
             reqhandler.end_headers()
             return
-        self.downloader.append(link)
+        self.operator.append(link)
         reqhandler.send_response(202)  # Accepted
         reqhandler.end_headers()
 
