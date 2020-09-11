@@ -240,7 +240,7 @@ class LinkshareEndpoint(Endpoint):
         self.streamer = streamer
         self.plugin = plugin
         self.mode = Mode.STREAM
-        self.operator = self.downloader
+        self.operator = self.streamer
         super().__init__(path)
 
     def do_GET(self, reqhandler):
@@ -272,9 +272,11 @@ class LinkshareEndpoint(Endpoint):
             return
         else:
             if route[0] == "download":
+                logging.info("Setting mode download")
                 self.mode = Mode.DOWNLOAD
                 self.operator = self.downloader
             elif route[0] == "stream":
+                logging.info("Setting mode stream")
                 self.mode = Mode.STREAM
                 self.operator = self.streamer
             else:
